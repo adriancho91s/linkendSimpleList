@@ -14,11 +14,17 @@ typedef struct {
 } FileNode;
 
 void addNodeToPosition(struct node **first, struct node *prevNode, int id, char name[30]);
+
 struct node *findNodeAtPosition(struct node **first, int position);
+
 struct node *findNodeById(struct node **first, int id);
+
 void insertAfterId(struct node **first, int id, char name[30]);
-void deleteNodeAfterId(struct node **first,int id);
+
+void deleteNodeAfterId(struct node **first, int id);
+
 void saveToFile(struct node **first);
+
 struct node *loadFromFile(struct node **first);
 
 /*
@@ -238,27 +244,24 @@ void saveToFile(struct node **first) {
     fclose(file);
 }
 
-struct node *loadFromFile(struct node **first) {
+struct node *loadFromFile(struct node **first) {// Fix order of the nodes, it's reversed, because it's returning the first node
     FILE *file = fopen("linkedlist.dat", "rb");
     if (file == NULL) {
-        file = fopen("linkedlist.dat", "wb");
-        printf("The file has been created\n");
-        delay();
-        fclose(file);
         return NULL;
     }
-    // if the file is not empty
-    if (getc(file) != EOF) {
-        fseek(file, 0, SEEK_SET);
-        while (1) {
-            FileNode *fileNode = malloc(sizeof(FileNode));
-            fread(fileNode, sizeof(FileNode), 1, file);
-            if (feof(file)) {
-                break;
-            }
-            addNodeToPosition(first, *first, fileNode->id, fileNode->name);
-        }
+    FileNode fileNode;
+    fread(&fileNode, sizeof(FileNode), 1, file);
+    *first = malloc(sizeof(struct node));
+    (*first)->id = fileNode.id;
+    strcpy((*first)->name, fileNode.name);
+    struct node *temp = *first;
+    while (fread(&fileNode, sizeof(FileNode), 1, file)) {
+        temp->next = malloc(sizeof(struct node));
+        temp = temp->next;
+        temp->id = fileNode.id;
+        strcpy(temp->name, fileNode.name);
     }
+    fclose(file);
     return *first;
 }
 
@@ -283,7 +286,7 @@ int main() {
         switch (option) {
             case 1:
                 clearScreen();
-                if (first == NULL) {
+                if (NULL == first) {
                     printf("The list is empty\n");
                     delay();
                     break;
@@ -297,27 +300,40 @@ int main() {
                 break;
             case 2:
                 clearScreen();
-                printf("\tYou're about to add a new node to a position\n");
-                print(&first);
-                int position;
-                printf("Choose a position to add the new node: ");
-                scanf("%d", &position);
-                struct node *prevNode = findNodeAtPosition(&first, position - 1);
-                if (prevNode == NULL) {
-                    printf("The given previous node cannot be NULL");
+                if (NULL != first) {
+                    printf("\tYou're about to add a new node to a position\n");
+                    print(&first);
+                    int position;
+                    printf("Choose a position to add the new node: ");
+                    scanf("%d", &position);
+                    struct node *prevNode = findNodeAtPosition(&first, position - 1);
+                    if (NULL == prevNode) {
+                        printf("The given previous node cannot be NULL");
+                        break;
+                    }
+                    int id;
+                    char name[30];
+                    printf("Write the id of the new node: ");
+                    scanf("%d", &id);
+                    getc(stdin);
+                    printf("Write the name of the new node: ");
+                    fgets(name, sizeof(name), stdin);
+                    name[strcspn(name, "\n")] = '\0';
+                    fflush(stdin);
+
+                    addNodeToPosition(&first, prevNode, id, name);
                     break;
                 }
-                int id;
-                char name[30];
                 printf("Write the id of the new node: ");
+                int id;
                 scanf("%d", &id);
-                getc(stdin);
                 printf("Write the name of the new node: ");
+                char name[30];
+                getc(stdin);
                 fgets(name, sizeof(name), stdin);
                 name[strcspn(name, "\n")] = '\0';
-                fflush(stdin);
+                addNodeToPosition(&first, first, id, name);
 
-                addNodeToPosition(&first, prevNode, id, name);
                 printf("Press enter to continue...");
                 fgetc(stdin);
                 clearScreen();
