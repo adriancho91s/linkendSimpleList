@@ -22,6 +22,7 @@ void deleteNodeAtPosition(struct node **first, int position);
 int checkIfIdExists(struct node **first, int id);
 void saveToFile(struct node **first);
 struct node *loadFromFile(struct node **first);
+void deleteList(struct node **first);
 void swapData(struct node *sourceNode, struct node *destinationNode);
 void swapNode(struct node **first, struct node *sourceNode, struct node *destinationNode);
 void print(struct node **first);
@@ -41,6 +42,7 @@ int main() {
             "Save list to file",
             "Swap data between two nodes",
             "Swap two nodes (adresses)",
+            "Delete the whole list",
             "Exit"
         };
         int numOptions = sizeof(options) / sizeof(options[0]);
@@ -49,14 +51,11 @@ int main() {
     int option;
     do {
         clearScreen();
-        
-
         printf("\tWelcome to the linked list program\n\n");
         for (int i = 0; i < numOptions; i++) {
             printf("%d. %s\n", i + 1, options[i]);
         }
         printf("\nChoose an option: ");
-        printf("Choose an option: ");
         scanf("%d", &option);
         switch (option) {
             case 1:
@@ -216,8 +215,16 @@ int main() {
                 break;
             case 9:
                 clearScreen();
+                deleteList(&first);
+                printf("The list has been deleted\n");
+                delay();
+                clearScreen();
+                break;
+            case 10:
+                clearScreen();
                 printf("Goodbye\n");
                 delay();
+                clearScreen();
                 break;
             default:
                 clearScreen();
@@ -228,6 +235,22 @@ int main() {
         }
     } while (option != numOptions);
     return 0;
+}
+
+/*
+ * Delete the linked list
+ * @return void
+ * */
+void deleteList(struct node **first) {
+    struct node *current = *first;
+    struct node *next;
+    while (current != NULL) {
+        next = current->next;
+        free(current);
+        current = next;
+    }
+    *first = NULL;
+    free(*first);
 }
 
 /*
@@ -274,10 +297,17 @@ void delay() {
 #endif
 }
 
-
+/*
+ * Save the linked list to a file
+ * @return void
+ * */
 void saveToFile(struct node **first) {
     FILE *file = fopen("linkedlist.dat", "wb");
     struct node *temp = *first;
+    if (*first == NULL) {
+        fclose(file);
+        return;
+    }
     while (temp != NULL) {
         FileNode *fileNode = malloc(sizeof(FileNode));
         fileNode->id = temp->id;
@@ -288,11 +318,22 @@ void saveToFile(struct node **first) {
     fclose(file);
 }
 
-struct node *loadFromFile(struct node **first) {// Fix order of the nodes, it's reversed, because it's returning the first node
+/*
+ * Load the linked list from a file
+ * @return struct node* The first node of the linked list
+ * */
+struct node *loadFromFile(struct node **first) {
     FILE *file = fopen("linkedlist.dat", "rb");
     if (file == NULL) {
         return NULL;
     }
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    if (size == 0) {
+        fclose(file);
+        return NULL;
+    }
+    fseek(file, 0, SEEK_SET);
     FileNode fileNode;
     fread(&fileNode, sizeof(FileNode), 1, file);
     *first = malloc(sizeof(struct node));
