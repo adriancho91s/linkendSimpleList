@@ -28,6 +28,7 @@ void swapNode(struct node **first, struct node *sourceNode, struct node *destina
 void print(struct node **first);
 void clearScreen();
 void delay();
+int contadorN(struct node **first);
 
 int main() {
     struct node *first = NULL;
@@ -43,6 +44,7 @@ int main() {
             "Swap data between two nodes",
             "Swap two nodes (adresses)",
             "Delete the whole list",
+            "Invert list"
             "Exit"
         };
         int numOptions = sizeof(options) / sizeof(options[0]);
@@ -221,6 +223,23 @@ int main() {
                 clearScreen();
                 break;
             case 10:
+                // Invert list using swapNode function
+                clearScreen();
+                int size = contadorN(&first);
+                printf("SIze: %d\n", size);
+                struct node *origen;
+                struct node *destino;
+                //Exchanging the first with last node, and after the second with the penultimate node, and so on
+                for (int i = 0; i < size/2; i++){
+                    origen = findNodeAtPosition(&first, i);
+                    destino = findNodeAtPosition(&first, size - i);
+                    printf("Origen: %s\n", origen->name);
+                    printf("Destino: %s\n", destino->name);
+                    swapNode(&first, origen, destino);
+                }
+                print(&first);
+                break;
+            case 11:
                 clearScreen();
                 printf("Goodbye\n");
                 delay();
@@ -302,8 +321,24 @@ void delay() {
  * @return void
  * */
 void saveToFile(struct node **first) {
-    FILE *file = fopen("linkedlist.dat", "wb");
+    int choice = 0;
+    printf("¿Deseas sobreescribir el archivo?(y 1/n 0): ");
     struct node *temp = *first;
+    scanf("%d", &choice);
+    if (!choice) {
+        FILE *file = fopen("linkedlist.dat", "rb+");
+        fseek(file, 0, SEEK_END);
+        while (temp != NULL) {
+            FileNode *fileNode = malloc(sizeof(FileNode));
+            fileNode->id = temp->id;
+            strcpy(fileNode->name, temp->name);
+            fwrite(fileNode, sizeof(FileNode), 1, file);
+            temp = temp->next;
+        }
+        fclose(file);
+        return;
+    }
+    FILE *file = fopen("linkedlist.dat", "wb");
     if (*first == NULL) {
         fclose(file);
         return;
@@ -461,6 +496,17 @@ void deleteNodeAtPosition(struct node **first, int position) {
  * @param id The id of the node after which the node will be deleted
  * @return void
  * */
+int contadorN(struct node **first){
+    int contador = 0;
+    struct node *temp = *first;
+    while (temp != NULL)
+    {
+        contador++;
+        temp = temp->next;
+    }
+    return contador;
+}
+
 void deleteNodeAfterId(struct node **first, int id) {
     struct node *prevNode = findNodeById(first, id);
     if (prevNode == NULL) {
